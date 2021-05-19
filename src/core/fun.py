@@ -1,8 +1,8 @@
 from src.core import contants
-from src.core.errors import Error, IllegalCharError
+from src.core import tokens as tk
+from src.core.errors import IllegalCharError
 from src.core.positions import Position
 from src.core.tokens import Token
-from src.core import tokens as tk
 
 
 class Lexer:
