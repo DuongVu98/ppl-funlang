@@ -18,6 +18,15 @@ class Parser:
             self.current_tok = self.tokens[self.tok_idx]
         return self.current_tok
 
+    def parse(self):
+        res = self.expr()
+        if not res.error and self.current_tok.type != tk.TT_EOF:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected '+', '-', '*' or '/'"
+            ))
+        return res
+
     def factor(self):
         res = ParseResult()
         tok = self.current_tok
@@ -50,28 +59,27 @@ class Parser:
             "Expected int or float"
         ))
 
+    def term(self):
+        return self.bin_op(self.factor, (tk.TT_MUL, tk.TT_DIV))
 
-def term(self):
-    return self.bin_op(self.factor, (tk.TT_MUL, tk.TT_DIV))
+    def expr(self):
+        return self.bin_op(self.term, (tk.TT_PLUS, tk.TT_MINUS))
 
+    def bin_op(self, func, ops):
+        res = ParseResult()
+        left = res.register(func())
+        if res.error:
+            return res
 
-def expr(self):
-    return self.bin_op(self.term, (tk.TT_PLUS, tk.TT_MINUS))
+        while self.current_tok.type in ops:
+            op_tok = self.current_tok
+            res.register(self.advance())
+            right = res.register(func())
+            if res.error:
+                return res
+            left = BinOpNode(left, op_tok, right)
 
-
-def bin_op(self, func, ops):
-    res = ParseResult()
-    left = res.register(func())
-    if res.error: return res
-
-    while self.current_tok.type in ops:
-        op_tok = self.current_tok
-        res.register(self.advance())
-        right = res.register(func())
-        if res.error: return res
-        left = BinOpNode(left, op_tok, right)
-
-    return res.success(left)
+        return res.success(left)
 
 
 class ParseResult:
