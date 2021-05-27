@@ -13,4 +13,4 @@ python_version = "3.8"
 
 [scripts]
 runMain = "python -m src"
-runBuild = "pyinstaller -n fun src/__main__.py"
+runBuild = "pyinstaller --onefile -n fun src/__main__.py"
