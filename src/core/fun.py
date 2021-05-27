@@ -1,9 +1,10 @@
 from src.core import contants
 from src.core import tokens as tk
 from src.core.errors import IllegalCharError
-from src.core.interpreter import Interpreter, Context
+from src.core.interpreter import Interpreter, Context, Number
 from src.core.parser import Parser
 from src.core.positions import Position
+from src.core.symboltable import SymbolTable
 from src.core.tokens import Token
 
 
@@ -27,6 +28,8 @@ class Lexer:
                 self.advance()
             elif self.current_char in contants.DIGITS:
                 tokens.append(self.make_number())
+            elif self.current_char in contants.LETTERS:
+                tokens.append(self.make_identifier())
             elif self.current_char == '+':
                 tokens.append(Token(tk.TT_PLUS, pos_start=self.pos))
                 self.advance()
@@ -41,6 +44,9 @@ class Lexer:
                 self.advance()
             elif self.current_char == '^':
                 tokens.append(Token(tk.TT_POW, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == '=':
+                tokens.append(Token(tk.TT_EQ, pos_start=self.pos))
                 self.advance()
             elif self.current_char == '(':
                 tokens.append(Token(tk.TT_LPAREN, pos_start=self.pos))
@@ -64,17 +70,31 @@ class Lexer:
 
         while self.current_char is not None and self.current_char in contants.DIGITS + '.':
             if self.current_char == '.':
-                if dot_count == 1: break
+                if dot_count == 1:
+                    break
                 dot_count += 1
-                num_str += '.'
-            else:
-                num_str += self.current_char
+            num_str += self.current_char
             self.advance()
 
         if dot_count == 0:
             return Token(tk.TT_INT, int(num_str), pos_start, self.pos)
         else:
             return Token(tk.TT_FLOAT, float(num_str), pos_start, self.pos)
+
+    def make_identifier(self):
+        id_str = ''
+        pos_start = self.pos.copy()
+
+        while self.current_char is not None and self.current_char in contants.LETTERS_DIGITS + '_':
+            id_str += self.current_char
+            self.advance()
+
+        tok_type = tk.TT_KEYWORD if id_str in tk.KEYWORDS else tk.TT_IDENTIFIER
+        return Token(tok_type, id_str, pos_start, self.pos)
+
+
+global_symbol_table = SymbolTable()
+global_symbol_table.set("null", Number(0))
 
 
 def run(fn, text):
@@ -87,13 +107,13 @@ def run(fn, text):
     # Generate AST
     parser = Parser(tokens)
     ast = parser.parse()
-
     if ast.error:
         return None, ast.error
 
     # Run program
     interpreter = Interpreter()
     context = Context('<program>')
+    context.symbol_table = global_symbol_table
     result = interpreter.visit(ast.node, context)
 
     return result.value, result.error
