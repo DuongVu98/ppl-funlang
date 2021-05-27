@@ -4,6 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pyinstaller = "*"
 
 [packages]
 
@@ -12,3 +13,4 @@ python_version = "3.8"
 
 [scripts]
 runMain = "python -m src"
+runBuild = "pyinstaller -n fun src/__main__.py"
